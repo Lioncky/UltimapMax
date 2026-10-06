@@ -19,14 +19,14 @@
     <ProjectGuid>{1B5BE021-FB5F-4792-AF04-39BF7705886E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>winipt</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17704.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>ipttool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

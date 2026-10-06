@@ -7,6 +7,33 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\pt_asid.c" />
+    <ClCompile Include="src\pt_block_cache.c" />
+    <ClCompile Include="src\pt_block_decoder.c" />
+    <ClCompile Include="src\pt_config.c" />
+    <ClCompile Include="src\pt_cpu.c" />
+    <ClCompile Include="src\pt_encoder.c" />
+    <ClCompile Include="src\pt_error.c" />
+    <ClCompile Include="src\pt_event_decoder.c" />
+    <ClCompile Include="src\pt_event_queue.c" />
+    <ClCompile Include="src\pt_ild.c" />
+    <ClCompile Include="src\pt_image.c" />
+    <ClCompile Include="src\pt_image_section_cache.c" />
+    <ClCompile Include="src\pt_insn.c" />
+    <ClCompile Include="src\pt_insn_decoder.c" />
+    <ClCompile Include="src\pt_last_ip.c" />
+    <ClCompile Include="src\pt_msec_cache.c" />
+    <ClCompile Include="src\pt_packet.c" />
+    <ClCompile Include="src\pt_packet_decoder.c" />
+    <ClCompile Include="src\pt_query_decoder.c" />
+    <ClCompile Include="src\pt_retstack.c" />
+    <ClCompile Include="src\pt_section.c" />
+    <ClCompile Include="src\pt_section_file.c" />
+    <ClCompile Include="src\pt_sync.c" />
+    <ClCompile Include="src\pt_time.c" />
+    <ClCompile Include="src\pt_tnt_cache.c" />
+    <ClCompile Include="src\pt_version.c" />
+    <ClCompile Include="src\windows\pt_section_windows.c" />
     <ClCompile Include="win32.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -14,14 +41,14 @@
     <ProjectGuid>{051DE316-C76C-4CFC-82DA-46C0B04CFAD8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>winipt</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17704.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>libipt</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -40,6 +67,9 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">include\;internal\include\;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pt_export=;__STDC_NO_ATOMICS__;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

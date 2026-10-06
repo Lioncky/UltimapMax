@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="win32.c" />
+    <ClCompile Include="src\pt_block_decoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_config.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_cpu.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_encoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_error.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_event_decoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_event_queue.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_ild.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_image.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_image_section_cache.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_insn.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_insn_decoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_last_ip.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_msec_cache.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_packet.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_packet_decoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_query_decoder.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_retstack.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_sync.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_time.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_tnt_cache.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_version.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_asid.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pt_block_cache.c">
+      <Filter>intel-ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\pt_section_windows.c" />
+    <ClCompile Include="src\pt_section.c" />
+    <ClCompile Include="src\pt_section_file.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="intel-ipt">
+      <UniqueIdentifier>{2a82076d-6b78-4ab6-ba66-d4ad06426481}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

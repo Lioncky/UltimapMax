@@ -438,14 +438,11 @@ RegisterExtendedImageForIptTracing (
             //
             // Send the request
             //
-            bRes = DeviceIoControl(hIpt,
-                                   IOCTL_IPT_REQUEST,
-                                   &inputBuffer,
-                                   sizeof(inputBuffer),
-                                   &outputBuffer,
-                                   sizeof(outputBuffer),
-                                   NULL,
-                                   NULL);
+			bRes = DeviceIoControl(
+                hIpt, 
+                IOCTL_IPT_REQUEST,
+				inputBuffer, dwInputLength,
+				&outputBuffer, sizeof(outputBuffer), NULL, NULL);
 
             //
             // Free the input buffer
