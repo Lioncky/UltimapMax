@@ -1,3 +1,4 @@
+ï»¿#define PRINT_DETAIL 0
 #include <Windows.h>
 #include <dbghelp.h>
 #include <stdio.h>
@@ -37,8 +38,8 @@ typedef enum _IPT_TL_ACTION
 // Global
 // ============================================================
 
-// DLL ×¢Èëµ½ Witcher 3 ºó£¬-1 ¾ÍÊÇµ±Ç°½ø³Ì pseudo handle¡£
-// ²»ĞèÒª OpenProcess£¬Ò²²»Òª CloseHandle¡£
+// DLL æ³¨å…¥ -1 å°±æ˜¯å½“å‰è¿›ç¨‹ pseudo handleã€‚
+// ä¸éœ€è¦ OpenProcessï¼Œä¹Ÿä¸è¦ CloseHandleã€‚
 static HANDLE g_hProcess = (HANDLE)-1;
 
 static volatile LONG g_running = 1;
@@ -47,16 +48,23 @@ static BOOL g_tracing = FALSE;
 
 static BOOL g_symInit = FALSE;
 
+extern void clean();
+extern void sumup();
+extern void enter(uintptr_t _to);
+static PBYTE g_end = FALSE;
+#define _ImageSize(_)  
+
 static void InitSymbols()
 {
-	if (g_symInit) return; // ÏµÍ³ DLL µÄ·ûºÅĞèÒª symsrv.dll ·ÅÔÚ dbghelp.dll ÅÔ±ß
+	if (g_symInit) return; // ç³»ç»Ÿ DLL çš„ç¬¦å·éœ€è¦ symsrv.dll æ”¾åœ¨ dbghelp.dll æ—è¾¹
 	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
 	SymInitialize(GetCurrentProcess(),
 		"srv*C:\\symbols*https://msdl.microsoft.com/download/symbols", TRUE);
 	g_symInit = TRUE;
+
 }
 
-static void Symbolize(uint64_t addr, char* out, size_t cap)
+void Symbolize(uint64_t addr, char* out, size_t cap)
 {
 	char modName[MAX_PATH] = "?";
 	HMODULE hm = NULL;
@@ -93,7 +101,7 @@ static void Symbolize(uint64_t addr, char* out, size_t cap)
 }
 
 // ------------------------------------------------------------
-// libipt µÄÄÚ´æ¶ÁÈ¡»Øµ÷£ºÖ±½Ó¶Á±¾½ø³ÌÄÚ´æ
+// libipt çš„å†…å­˜è¯»å–å›è°ƒï¼šç›´æ¥è¯»æœ¬è¿›ç¨‹å†…å­˜
 // ------------------------------------------------------------
 static int ReadMemCb(uint8_t* buffer, size_t size,
 	const struct pt_asid* asid, uint64_t ip, void* context)
@@ -113,7 +121,7 @@ static void GetCpuInfo(struct pt_cpu* cpu)
 	__cpuid(r, 1);
 	unsigned eax = (unsigned)r[0];
 
-	cpu->vendor = pcv_intel;     // AMD Ã»ÓĞ PT£¬ÕâÀïÄ¬ÈÏ Intel
+	cpu->vendor = pcv_intel;     // AMD æ²¡æœ‰ PTï¼Œè¿™é‡Œé»˜è®¤ Intel
 	cpu->family = (eax >> 8) & 0xF;
 	cpu->model = (eax >> 4) & 0xF;
 	cpu->stepping = eax & 0xF;
@@ -124,16 +132,16 @@ static void GetCpuInfo(struct pt_cpu* cpu)
 }
 
 // ------------------------------------------------------------
-// ½âÂë²¢´òÓ¡µ÷ÓÃÕ»
+// è§£ç å¹¶æ‰“å°è°ƒç”¨æ ˆ
 // ------------------------------------------------------------
 #define MAX_SHADOW  4096
-#define MAX_PRINT   3000     // µ÷ÓÃÈÕÖ¾×î¶à´òÓ¡¶àÉÙĞĞ
+#define MAX_PRINT   3000     // è°ƒç”¨æ—¥å¿—æœ€å¤šæ‰“å°å¤šå°‘è¡Œ
 
 static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 {
 	InitSymbols();
 
-	// ---- 1. ÏßĞÔ»¯»·ĞÎ»º³åÇø ----
+	// ---- 1. çº¿æ€§åŒ–ç¯å½¢ç¼“å†²åŒº ----
 	BYTE* linear = (BYTE*)malloc(size);
 	if (!linear) return;
 
@@ -147,7 +155,7 @@ static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 		memcpy(linear, trace, size);
 	}
 
-	// ---- 2. ÅäÖÃ½âÂëÆ÷ ----
+	// ---- 2. é…ç½®è§£ç å™¨ ----
 	struct pt_config cfg;
 	pt_config_init(&cfg);
 	cfg.begin = linear;
@@ -162,18 +170,18 @@ static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 	if (!dec) { printf("  [-] pt_insn_alloc_decoder failed\n"); free(linear); return; }
 	pt_insn_set_image(dec, img);
 
-	// ---- 3. ½âÂë ----
-	uint64_t shadow[MAX_SHADOW];
+	// ---- 3. è§£ç  ----
+	uint64_t* shadow = malloc(MAX_SHADOW);
 	int sp = 0;
 	uint64_t totalCalls = 0, printed = 0;
-	int pendingKind = 0;           // 1 = ¸ÕÖ´ĞĞ call, 2 = ¸ÕÖ´ĞĞ ret
+	int pendingKind = 0;           // 1 = åˆšæ‰§è¡Œ call, 2 = åˆšæ‰§è¡Œ ret
 	uint64_t pendingCaller = 0, pendingRet = 0;
 	char s1[512], s2[512];
 
 	for (;;)
 	{
 		int status = pt_insn_sync_forward(dec);
-		if (status < 0) break;               // pte_eos£º½áÊø
+		if (status < 0) break;               // pte_eosï¼šç»“æŸ
 
 		pendingKind = 0;
 
@@ -183,7 +191,7 @@ static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 			{
 				struct pt_event ev;
 				status = pt_insn_event(dec, &ev, sizeof(ev));
-				pendingKind = 0;             // ÊÂ¼ş(Òì²½Ìø×ª/ÖĞ¶Ï)»á´ò¶Ï call/ret Åä¶Ô
+				pendingKind = 0;             // äº‹ä»¶(å¼‚æ­¥è·³è½¬/ä¸­æ–­)ä¼šæ‰“æ–­ call/ret é…å¯¹
 				if (status < 0) break;
 			}
 			if (status < 0) break;
@@ -194,23 +202,33 @@ static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 
 			if (insn.iclass != ptic_error)
 			{
-				if (pendingKind == 1)
+
+				// Boost Range
+				if (pendingCaller > g_end || insn.ip > g_end)
 				{
-					// ÕâÌõÖ¸ÁîµÄ ip ¾ÍÊÇ call µÄÄ¿±ê
+				}
+				else if (pendingKind == 1)
+				{
+					// è¿™æ¡æŒ‡ä»¤çš„ ip å°±æ˜¯ call çš„ç›®æ ‡
 					totalCalls++;
 					if (printed < MAX_PRINT)
 					{
 						Symbolize(pendingCaller, s1, sizeof(s1));
 						Symbolize(insn.ip, s2, sizeof(s2));
 						int indent = sp * 2; if (indent > 60) indent = 60;
+						
+						#if  PRINT_DETAIL
 						printf("  %*s%s  ->  %s\n", indent, "", s1, s2);
+						#endif
+
+						enter(insn.ip);
 						printed++;
 					}
 					if (sp < MAX_SHADOW) shadow[sp++] = pendingRet;
 				}
 				else if (pendingKind == 2)
 				{
-					// insn.ip ÊÇ ret ÂäµØµÄµØÖ·£¬ÔÚÓ°×ÓÕ»ÀïÕÒÆ¥ÅäÏî(¼æÈİÒì³£/longjmp)
+					// insn.ip æ˜¯ ret è½åœ°çš„åœ°å€ï¼Œåœ¨å½±å­æ ˆé‡Œæ‰¾åŒ¹é…é¡¹(å…¼å®¹å¼‚å¸¸/longjmp)
 					for (int i = sp; i > 0; i--)
 					{
 						if (shadow[i - 1] == insn.ip) { sp = i - 1; break; }
@@ -230,23 +248,27 @@ static void DumpCallStack(const BYTE* trace, DWORD size, DWORD ringOff)
 				}
 			}
 
-			if (status < 0) break;           // ³ö´í ¡ú »Øµ½Íâ²ãÖØĞÂ sync
+			if (status < 0) break;           // å‡ºé”™ â†’ å›åˆ°å¤–å±‚é‡æ–° sync
 		}
 	}
 
-	printf("  call ×ÜÊı: %llu (ÒÑ´òÓ¡ %llu)\n", totalCalls, printed);
+	printf("  call æ€»æ•°: %llu (å·²æ‰“å° %llu)\n", totalCalls, printed);
 
-	// ---- 4. ×¥È¡½áÊøÊ±¿ÌµÄµ÷ÓÃÕ» ----
-	printf("\n  ----- Call stack at capture (×îÄÚ²ãÔÚ×îÉÏ) -----\n");
+	// ---- 4. æŠ“å–ç»“æŸæ—¶åˆ»çš„è°ƒç”¨æ ˆ ----
+	printf("\n  ----- Call stack at capture (æœ€å†…å±‚åœ¨æœ€ä¸Š) -----\n");
 	for (int i = sp - 1; i >= 0; i--)
 	{
-		Symbolize(shadow[i] - 1, s1, sizeof(s1));   // -1 ÂäÔÚ call Ö¸ÁîÄÚ²¿£¬·ûºÅ¸ü×¼
+		Symbolize(shadow[i] - 1, s1, sizeof(s1));   // -1 è½åœ¨ call æŒ‡ä»¤å†…éƒ¨ï¼Œç¬¦å·æ›´å‡†
+
+		#if  PRINT_DETAIL
 		printf("  #%-3d 0x%016llX  %s\n", sp - 1 - i, shadow[i], s1);
+		#endif
 	}
 
 	pt_insn_free_decoder(dec);
 	pt_image_free(img);
 	free(linear);
+	free(shadow);
 }
 
 
@@ -372,7 +394,7 @@ static BOOL SaveCurrentTrace(const char* fileName)
 	// *** PARSE ***
 	{
 		// --------------------------------------------------------
-		// ÎÄ¼şÍ·
+		// æ–‡ä»¶å¤´
 		//
 		// +0x00 DWORD TraceVersion
 		// +0x04 DWORD TraceSize
@@ -482,7 +504,7 @@ static BOOL SaveCurrentTrace(const char* fileName)
 
 
 				// ----------------------------------------------------
-				// ºÍ Python Ò»Ñù£¬Ö±½Ó´òÓ¡ PT Trace
+				// å’Œ Python ä¸€æ ·ï¼Œç›´æ¥æ‰“å° PT Trace
 				// ----------------------------------------------------
 
 				printf("\n");
@@ -499,6 +521,7 @@ static BOOL SaveCurrentTrace(const char* fileName)
 					threadTraceSize
 				);
 
+				if (0)
 				for (DWORD i = 0; i < showSize; i += 16)
 				{
 					DWORD lineSize = showSize - i;
@@ -543,14 +566,14 @@ static BOOL SaveCurrentTrace(const char* fileName)
 
 
 				// ----------------------------------------------------
-				// ÍêÈ«°´ÕÕ Python£º
+				// å®Œå…¨æŒ‰ç…§ Pythonï¼š
 				//
 				// offset = trace_end
 				// ----------------------------------------------------
 
 				if (traceEnd > traceSize + 8)
 				{
-					printf("[!] Trace ³¬³öÎÄ¼ş·¶Î§\n");
+					printf("[!] Trace è¶…å‡ºæ–‡ä»¶èŒƒå›´\n");
 					printf(
 						"    file size = 0x%X\n",
 						traceSize + 8
@@ -568,11 +591,11 @@ static BOOL SaveCurrentTrace(const char* fileName)
 
 				if (traceEnd64 > (DWORD64)traceSize + 8)
 				{
-					printf("[!] Trace ³¬³öÎÄ¼ş·¶Î§: end=0x%llX file=0x%X\n", traceEnd64, traceSize + 8);
+					printf("[!] Trace è¶…å‡ºæ–‡ä»¶èŒƒå›´: end=0x%llX file=0x%X\n", traceEnd64, traceSize + 8);
 					break;
 				}
 
-				// ... ÉÏÃæ±£ÁôÄãÔ­À´µÄÍ·²¿×Ö¶Î printf ...
+				// ... ä¸Šé¢ä¿ç•™ä½ åŸæ¥çš„å¤´éƒ¨å­—æ®µ printf ...
 
 				printf("\n  ----- Decode -----\n");
 				DumpCallStack(trace, threadTraceSize, ringBufferOffset);
@@ -615,6 +638,8 @@ static BOOL SaveCurrentTrace(const char* fileName)
 	printf(
 		"[+] Written: %lu bytes\n",
 		written);
+
+	sumup();
 
 	return TRUE;
 }
@@ -810,6 +835,7 @@ ConvertToPASizeToSizeOption(
 
 static BOOL StartTrace()
 {
+	clean();
 	printf("[+] Starting IPT...\n");
 
 	IPT_OPTIONS options;
@@ -844,19 +870,19 @@ static BOOL CaptureTrace()
 
 
 	// --------------------------------------------------------
-	// ÏÈ¶ÁÈ¡ Trace
+	// å…ˆè¯»å– Trace
 	//
-	// ÕâºÍÄãÖ®Ç°£º
+	// è¿™å’Œä½ ä¹‹å‰ï¼š
 	//
 	// ipttool --trace 0x4C44 trace.dat
 	//
-	// µÄĞĞÎªÒ»ÖÂ¡£
+	// çš„è¡Œä¸ºä¸€è‡´ã€‚
 	// --------------------------------------------------------
 
 	BOOL result = SaveCurrentTrace("C:\\Users\\Administrator\\Desktop\\123.bin)");
 
 	// --------------------------------------------------------
-	// ÔÙÍ£Ö¹ IPT
+	// å†åœæ­¢ IPT
 	// --------------------------------------------------------
 
 	printf("[+] Stopping IPT...\n");
@@ -890,7 +916,7 @@ static DWORD WINAPI TraceThread(
 
 	printf("\n");
 	printf("========================================\n");
-	printf(" Witcher 3 IPT DLL TID: %X\n", GetCurrentThreadId());
+	printf(" IPT DLL TID: %X\n", GetCurrentThreadId());
 	printf("========================================\n");
 	printf("\n");
 
@@ -916,13 +942,13 @@ static DWORD WINAPI TraceThread(
 
 
 		// ----------------------------------------------------
-		// ENTER ÉÏÉıÑØ
+		// ENTER ä¸Šå‡æ²¿
 		// ----------------------------------------------------
 
 		if (down && !lastDown)
 		{
 			// =================================================
-			// µÚÒ»´Î ENTER
+			// ç¬¬ä¸€æ¬¡ ENTER
 			// =================================================
 
 			if (!g_tracing)
@@ -946,7 +972,7 @@ static DWORD WINAPI TraceThread(
 			}
 
 			// =================================================
-			// µÚ¶ş´Î ENTER
+			// ç¬¬äºŒæ¬¡ ENTER
 			// =================================================
 
 			else
@@ -971,11 +997,11 @@ static DWORD WINAPI TraceThread(
 		}
 
 
-		// ±£´æÉÏÒ»Ö¡ Enter ×´Ì¬
+		// ä¿å­˜ä¸Šä¸€å¸§ Enter çŠ¶æ€
 		lastDown = down;
 
 
-		// ·ÀÖ¹Õ¼Âú CPU
+		// é˜²æ­¢å æ»¡ CPU
 		Sleep(1);
 	}
 
@@ -1020,6 +1046,12 @@ BOOL WINAPI DllMain(
 		}
 
 		freopen_s(&fp, "CONIN$", "r", stdin);
+
+		PBYTE a = (PBYTE)GetModuleHandleW(NULL);
+
+		g_end = a +
+			((PIMAGE_NT_HEADERS)(a + ((PIMAGE_DOS_HEADER)a)->e_lfanew))
+			->OptionalHeader.SizeOfImage;
 
 		HANDLE hThread = CreateThread(
 			NULL,

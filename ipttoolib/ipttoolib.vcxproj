@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ipttoolib.c" />
+    <ClCompile Include="sumup.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libipt\libipt.vcxproj">
